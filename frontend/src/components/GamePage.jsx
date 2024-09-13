@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom'; // Assuming you're using react-router for navigation
-import Tile from './Tile'; // Tile component for individual tiles
+import { useNavigate } from 'react-router-dom';
+import Tile from './Tile';
 
-// Function to initialize the grid with two random tiles
 const initializeGrid = () => {
   let grid = Array(4).fill(null).map(() => Array(4).fill(0));
   addRandomTile(grid);
@@ -10,7 +9,6 @@ const initializeGrid = () => {
   return grid;
 };
 
-// Function to add a new tile (2 or 4) to a random empty cell
 const addRandomTile = (grid) => {
   let emptyCells = [];
   for (let r = 0; r < 4; r++) {
@@ -20,12 +18,11 @@ const addRandomTile = (grid) => {
   }
   if (emptyCells.length === 0) return;
   const { r, c } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-  grid[r][c] = Math.random() < 0.1 ? 4 : 2; // 10% chance of 4, 90% chance of 2
+  grid[r][c] = Math.random() < 0.1 ? 4 : 2;
 };
 
-// Helper function to slide tiles in a row or column and merge them
 const slideAndMerge = (line) => {
-  let newLine = line.filter(tile => tile !== 0); // Remove all zeros
+  let newLine = line.filter(tile => tile !== 0);
   let mergedLine = [];
   let skip = false;
 
@@ -35,20 +32,17 @@ const slideAndMerge = (line) => {
       continue;
     }
 
-    // Merge tiles if two adjacent tiles are equal
     if (i < newLine.length - 1 && newLine[i] === newLine[i + 1]) {
       mergedLine.push(newLine[i] * 2);
-      skip = true; // Skip the next tile because it was merged
+      skip = true;
     } else {
       mergedLine.push(newLine[i]);
     }
   }
 
-  // Add zeros to the end of the array to maintain grid size
   return [...mergedLine, ...Array(4 - mergedLine.length).fill(0)];
 };
 
-// Function to move tiles based on direction
 const moveTiles = (grid, direction) => {
   let newGrid = [...grid];
   let moved = false;
@@ -95,62 +89,71 @@ const moveTiles = (grid, direction) => {
   return { grid: newGrid, moved };
 };
 
-// Function to check if any moves are possible
 const isGameOver = (grid) => {
   for (let r = 0; r < 4; r++) {
     for (let c = 0; c < 4; c++) {
-      if (grid[r][c] === 0) return false; // Empty cell exists
-      if (r < 3 && grid[r][c] === grid[r + 1][c]) return false; // Vertical merge possible
-      if (c < 3 && grid[r][c] === grid[r][c + 1]) return false; // Horizontal merge possible
+      if (grid[r][c] === 0) return false;
+      if (r < 3 && grid[r][c] === grid[r + 1][c]) return false;
+      if (c < 3 && grid[r][c] === grid[r][c + 1]) return false;
     }
   }
-  return true; // No moves possible
+  return true;
 };
 
 const GamePage = () => {
   const [grid, setGrid] = useState(initializeGrid());
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(sessionStorage.getItem('highScore') || 0);
+  const [highScore, setHighScore] = useState(parseInt(sessionStorage.getItem('highScore'), 10) || 0);
   const [gameOver, setGameOver] = useState(false);
+  const [leaderboard, setLeaderboard] = useState([]);
   const username = sessionStorage.getItem('username');
+  const email = sessionStorage.getItem('email');
   const navigate = useNavigate();
 
   useEffect(() => {
     if (score > highScore) {
       setHighScore(score);
-      // Update high score in backend
-      fetch('http://localhost:5000/update-score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, highScore: score }),
-      });
+      updateHighScore();
     }
-  }, [score, highScore, username]);
+  }, [score]);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/user/leaderboard');
+        if (response.ok) {
+          const data = await response.json();
+          setLeaderboard(data);
+        } else {
+          const errorData = await response.json();
+          console.error('Error fetching leaderboard:', errorData.message);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+    fetchLeaderboard();
+  }, []);
 
   const handleMove = (direction) => {
-    if (gameOver) return; // Disable moves when game is over
+    if (gameOver) return;
 
     const { grid: newGrid, moved } = moveTiles([...grid], direction);
 
-    // If a move was made, update the grid and add a new tile
     if (moved) {
       addRandomTile(newGrid);
       setGrid(newGrid);
-
-      // Update the score and high score
       const newScore = calculateScore(newGrid);
       setScore(newScore);
-      if (newScore > highScore) {
-        setHighScore(newScore);
-      }
 
       if (isGameOver(newGrid)) {
-        setGameOver(true); // Trigger Game Over
+        setGameOver(true);
+        updateLeaderboard();  // Update leaderboard when game is over
       }
     }
   };
 
-  // Handle key presses for tile movement
   const handleKeyPress = useCallback((event) => {
     switch (event.key) {
       case 'ArrowUp':
@@ -175,23 +178,24 @@ const GamePage = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [handleKeyPress]);
 
-  // Calculate the score based on the grid values
   const calculateScore = (grid) => {
     return grid.flat().reduce((total, value) => value > 0 ? total + value : total, 0);
   };
 
   const updateHighScore = async () => {
+    if (!email) return;  // Ensure email is available
+
     try {
-      const response = await fetch('http://localhost:5000/update-score', {
+      const response = await fetch('http://localhost:5000/user/update-score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, highScore: score }),
+        body: JSON.stringify({ email, highscore: score }),
       });
-  
+
       if (response.ok) {
         const data = await response.json();
-        console.log('High score updated:', data.highScore);
-        setHighScore(data.highScore);
+        setHighScore(data.highscore);
+        sessionStorage.setItem('highScore', data.highscore);
       } else {
         const errorData = await response.json();
         console.error('Error updating high score:', errorData.message);
@@ -199,80 +203,68 @@ const GamePage = () => {
     } catch (error) {
       console.error('Error:', error);
     }
-  };  
-  
+  };
+
+  const updateLeaderboard = async () => {
+    if (!username || score === 0) return;  // Ensure username and score are valid
+
+    try {
+      const response = await fetch('http://localhost:5000/user/leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, score }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setLeaderboard(data);
+      } else {
+        const errorData = await response.json();
+        console.error('Error updating leaderboard:', errorData.message);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
   const resetGame = () => {
-    console.log('Resetting game and updating high score...');
     setGrid(initializeGrid());
     setScore(0);
     setGameOver(false);
-  
-    // Update high score in backend
-    fetch('http://localhost:5000/update-score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, highScore: score }),
-    })
-    .then(response => response.json())
-    .then(data => console.log('High score update response:', data))
-    .catch(error => console.error('Error updating high score:', error));
   };
 
-  // "Play Again" logic: similar to reset but appears only after Game Over
-  const playAgain = () => {
-    resetGame();
-  };
-
-  // Logout function (navigates to home page)
   const handleLogout = () => {
-    sessionStorage.clear(); // Clear the session
-    navigate('/'); // Navigate to home page
+    sessionStorage.removeItem('username');
+    sessionStorage.removeItem('email');
+    navigate('/');
   };
 
   return (
-    <div className="min-h-screen bg-purple-900 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-sm mb-4 p-4 bg-violet-800 rounded-lg shadow-lg">
-        <div className="text-center mb-4 text-white">
-          <div className="text-xl font-bold mb-2">Username: {username}</div>
-          <div className="text-lg mb-2">Score: {score}</div>
-          <div className="text-lg">High Score: {highScore}</div>
-        </div>
-        <div className="grid grid-cols-4 gap-1">
-          {grid.map((row, rowIndex) => (
-            row.map((tile, colIndex) => (
-              <Tile key={`${rowIndex}-${colIndex}`} value={tile} />
-            ))
-          ))}
-        </div>
-        {gameOver && (
-          <div className="mt-4">
-            <button
-              className="bg-yellow-500 hover:bg-yellow-600 text-purple-900 font-bold py-3 px-6 rounded-lg text-lg"
-              onClick={playAgain}
-            >
-              Play Again
-            </button>
+    <div className="game-container">
+      <header className="game-header">
+        <button onClick={resetGame}>New Game</button>
+        <button onClick={handleLogout}>Logout</button>
+        <h1>2048 Game</h1>
+        <h2>Score: {score}</h2>
+        <h2>High Score: {highScore}</h2>
+      </header>
+      <div className="grid-container">
+        {grid.map((row, rowIndex) => (
+          <div key={rowIndex} className="grid-row">
+            {row.map((tile, colIndex) => (
+              <Tile key={colIndex} value={tile} />
+            ))}
           </div>
-        )}
+        ))}
       </div>
-  
-      {/* Buttons Container */}
-      <div className="mt-4 flex space-x-4">
-        {/* Reset Button */}
-        <button
-          className="bg-yellow-500 hover:bg-yellow-600 text-purple-900 font-bold py-3 px-6 rounded-lg text-lg"
-          onClick={resetGame}
-        >
-          Reset
-        </button>
-  
-        {/* Exit Button */}
-        <button
-          className="bg-yellow-500 hover:bg-yellow-600 text-purple-900 font-bold py-3 px-6 rounded-lg text-lg"
-          onClick={handleLogout}
-        >
-          Exit
-        </button>
+      {gameOver && <div className="game-over">Game Over</div>}
+      <div className="leaderboard">
+        <h2>Leaderboard</h2>
+        <ul>
+          {leaderboard.map((entry, index) => (
+            <li key={index}>{entry.username}: {entry.highscore}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ const Leaderboard = () => {
     // Fetch leaderboard data from the server
     const fetchLeaderboard = async () => {
       try {
-        const response = await fetch('http://localhost:5000/leaderboard');
+        const response = await fetch('http://localhost:5000/user/leaderboard');
         if (response.ok) {
           const data = await response.json();
           setLeaderboard(data);
