@@ -27,8 +27,8 @@ const Leaderboard = () => {
       <ul className="space-y-4">
         {leaderboard.map((player, index) => (
           <li key={index} className="flex justify-between text-lg">
-            <span>{index + 1}. {player.username}</span>
-            <span>{player.highScore}</span>
+            <span>{index + 1}. {player.name}</span>
+            <span>{player.highscore}</span>
           </li>
         ))}
       </ul>

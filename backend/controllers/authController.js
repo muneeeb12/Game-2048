@@ -37,7 +37,7 @@ const loginUser = (req, res, next) => {
     }
     req.logIn(user, (err) => {
       if (err) return next(err);
-      return res.status(200).json({ message: 'Login successful', user: { name: user.name, highscore: user.highscore } });
+      return res.status(200).json({ message: 'Login successful', user: { name: user.name, highscore: user.highscore, email: user.email } });
     });
   })(req, res, next);
 };

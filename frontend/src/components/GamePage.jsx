@@ -106,8 +106,11 @@ const GamePage = () => {
   const [highScore, setHighScore] = useState(parseInt(sessionStorage.getItem('highScore'), 10) || 0);
   const [gameOver, setGameOver] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
-  const username = sessionStorage.getItem('username');
-  const email = sessionStorage.getItem('email');
+  const username = sessionStorage.getItem('name');
+  const userEmail = sessionStorage.getItem('email');
+  console.log(username)
+  console.log(highScore)
+  console.log(userEmail);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -183,13 +186,15 @@ const GamePage = () => {
   };
 
   const updateHighScore = async () => {
-    if (!email) return;  // Ensure email is available
+    if (!userEmail) {
+      return; 
+     } // Ensure email is available
 
     try {
       const response = await fetch('http://localhost:5000/user/update-score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, highscore: score }),
+        body: JSON.stringify({ email: userEmail, highscore: score }),
       });
 
       if (response.ok) {
@@ -212,7 +217,7 @@ const GamePage = () => {
       const response = await fetch('http://localhost:5000/user/leaderboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, score }),
+        body: JSON.stringify({ email, highscore:score }),
       });
 
       if (response.ok) {
@@ -234,7 +239,7 @@ const GamePage = () => {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('username');
+    sessionStorage.removeItem('name');
     sessionStorage.removeItem('email');
     navigate('/');
   };
@@ -246,6 +251,7 @@ const GamePage = () => {
         <button onClick={handleLogout}>Logout</button>
         <h1>2048 Game</h1>
         <h2>Score: {score}</h2>
+        <h2>Email: {userEmail}</h2>
         <h2>High Score: {highScore}</h2>
       </header>
       <div className="grid-container">

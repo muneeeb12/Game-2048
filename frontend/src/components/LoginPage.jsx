@@ -33,6 +33,7 @@ const LoginPage = () => {
         setIsRegistering(false); // Switch to login view after successful registration
       } else {
         sessionStorage.setItem('name', data.user.name);
+        sessionStorage.setItem('email', data.user.email);
         sessionStorage.setItem('highScore', data.user.highscore);
         navigate('/game'); // Navigate to the game page after successful login
       }
