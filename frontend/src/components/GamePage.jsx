@@ -245,32 +245,51 @@ const GamePage = () => {
   };
 
   return (
-    <div className="game-container">
-      <header className="game-header">
-        <button onClick={resetGame}>New Game</button>
-        <button onClick={handleLogout}>Logout</button>
-        <h1>2048 Game</h1>
-        <h2>Score: {score}</h2>
-        <h2>Email: {userEmail}</h2>
-        <h2>High Score: {highScore}</h2>
-      </header>
-      <div className="grid-container">
-        {grid.map((row, rowIndex) => (
-          <div key={rowIndex} className="grid-row">
-            {row.map((tile, colIndex) => (
-              <Tile key={colIndex} value={tile} />
-            ))}
-          </div>
-        ))}
-      </div>
-      {gameOver && <div className="game-over">Game Over</div>}
-      <div className="leaderboard">
-        <h2>Leaderboard</h2>
-        <ul>
-          {leaderboard.map((entry, index) => (
-            <li key={index}>{entry.username}: {entry.highscore}</li>
+    <div className="min-h-screen bg-purple-900 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-sm mb-4 p-4 bg-violet-800 rounded-lg shadow-lg">
+        <div className="text-center mb-4 text-white">
+          <div className="text-xl font-bold mb-2">Username: {username}</div>
+          <div className="text-lg mb-2">Score: {score}</div>
+          <div className="text-lg">High Score: {highScore}</div>
+        </div>
+  
+        <div className="grid grid-cols-4 gap-1">
+          {grid.map((row, rowIndex) => (
+            row.map((tile, colIndex) => (
+              <Tile key={`${rowIndex}-${colIndex}`} value={tile} />
+            ))
           ))}
-        </ul>
+        </div>
+  
+        {gameOver && (
+          <div className="mt-4">
+            <button
+              className="bg-yellow-500 hover:bg-yellow-600 text-purple-900 font-bold py-3 px-6 rounded-lg text-lg"
+              onClick={playAgain}
+            >
+              Play Again
+            </button>
+          </div>
+        )}
+      </div>
+  
+      {/* Buttons Container */}
+      <div className="mt-4 flex space-x-4">
+        {/* Reset Button */}
+        <button
+          className="bg-yellow-500 hover:bg-yellow-600 text-purple-900 font-bold py-3 px-6 rounded-lg text-lg"
+          onClick={resetGame}
+        >
+          Reset
+        </button>
+  
+        {/* Exit Button */}
+        <button
+          className="bg-yellow-500 hover:bg-yellow-600 text-purple-900 font-bold py-3 px-6 rounded-lg text-lg"
+          onClick={handleLogout}
+        >
+          Exit
+        </button>
       </div>
     </div>
   );
