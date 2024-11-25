@@ -31,7 +31,7 @@ phases:
     commands:
       # Deploy the React build to S3 (or any other static hosting service)
       echo "Deploying frontend to S3..."
-      aws s3 sync ../client/dist/ s3://your-s3-bucket-name/ --delete
+      aws s3 sync ../client/dist/ s3://3238-bucket/ --delete
 
       # Deploy the backend (this step depends on your backend deployment setup)
       echo "Deploying backend..."
