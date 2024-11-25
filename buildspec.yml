@@ -1,0 +1,50 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      # Install backend dependencies
+      echo "Installing backend dependencies..."
+      cd server
+      npm install
+
+      # Install frontend dependencies
+      echo "Installing frontend dependencies..."
+      cd ../client
+      npm install
+
+  build:
+    commands:
+      # Build the React frontend using Vite
+      echo "Building frontend with Vite..."
+      cd ../client
+      npm run build
+
+      # Return to backend directory
+      cd ../server
+
+      # (Optional) Run tests if you have any
+      # echo "Running backend tests..."
+      # npm test
+
+  post_build:
+    commands:
+      # Deploy the React build to S3 (or any other static hosting service)
+      echo "Deploying frontend to S3..."
+      aws s3 sync ../client/dist/ s3://your-s3-bucket-name/ --delete
+
+      # Deploy the backend (this step depends on your backend deployment setup)
+      echo "Deploying backend..."
+      # If deploying to EC2, Elastic Beanstalk, etc., add the necessary deployment steps here.
+      # Example for EC2 or Elastic Beanstalk might involve SSH into your server or using AWS Elastic Beanstalk CLI.
+
+artifacts:
+  files:
+    - server/**/*       # Include all backend files
+    - client/dist/**/*  # Include the build folder of the frontend
+  base-directory: '.'   # Base directory for the artifact files
+
+cache:
+  paths:
+    - 'server/node_modules/**/*'
+    - 'client/node_modules/**/*'
